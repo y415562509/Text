@@ -1,0 +1,201 @@
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.TreeSet;
+
+public class ShowHand {
+	
+	private List<String> pukeList = new ArrayList<String>();
+	private Map<String,TreeSet<String>> map = new HashMap<String,TreeSet<String>>();
+	private Map<String,Double> sorceMap = new HashMap<String,Double>();
+	private boolean flag = true;
+	//1、创建扑克牌
+	private void createPuke(){
+		String[] point = {"7","8","9","10","J","Q","K"};
+		String[] type = {"黑桃","红桃","梅花","方块"};
+		for(int i=0;i<type.length;i++){
+			for(int j=0;j<point.length;j++){
+				this.pukeList.add(type[i]+point[j]);
+			}
+		}
+	}
+	//2、对扑克牌进行洗牌
+	private void sortedPuke(){
+		Random rand = new Random();
+		for(int i=0;i<100;i++){
+			int index1 = rand.nextInt(this.pukeList.size());
+			int index2 = rand.nextInt(this.pukeList.size());
+			String temp = this.pukeList.get(index1);
+			this.pukeList.set(index1, this.pukeList.get(index2));
+			this.pukeList.set(index2, temp);
+		}
+		System.out.println(this.pukeList);
+	}
+	//3、创建参加游戏的人
+	private void createPlayer(){
+		System.out.println("请输入参与游戏的玩家的名称，中间使用空格隔开：");
+		Scanner scan = new Scanner(System.in);
+		String players = scan.nextLine();
+		String[] data = players.split(" ");
+		if(data.length<2 || data.length>5){
+			System.out.println("参与游戏的玩家人数不符合要求，程序终止执行！");
+			flag = false;
+			return;
+		}
+		Comparator<String> comp = new Comparator<String>() {
+			@Override
+			public int compare(String str1, String str2) {
+				int point1 = getPoint(str1.substring(2));
+				int point2 = getPoint(str2.substring(2));
+				if(point1>point2){
+					return 1;
+				}else if(point1<point2){
+					return -1;
+				}else{
+					int type1 = getType(str1.substring(0, 2));
+					int type2 = getType(str2.substring(0, 2));
+					if(type1>type2){
+						return 1;
+					}else{
+						return -1;
+					}
+				}
+			}
+		};
+		for(int i=0;i<data.length;i++){
+			map.put(data[i], new TreeSet<String>(comp));
+		}
+	}
+	
+	private int getPoint(String point){
+		if("J".equals(point)){
+			return 11;
+		}else if("Q".equals(point)){
+			return 12;
+		}else if("K".equals(point)){
+			return 13;
+		}else{
+			return Integer.parseInt(point);
+		}
+	}
+	
+	private int getType(String type){
+		if("黑桃".equals(type)){
+			return 1;
+		}else if("红桃".equals(type)){
+			return 2;
+		}else if("梅花".equals(type)){
+			return 3;
+		}else{
+			return 4;
+		}
+	}
+	//4、给玩家发牌
+	private void showPuke(){
+		for(int i=0;i<5;i++){
+			for(String key : map.keySet()){
+				String puke = this.pukeList.remove(0);
+				map.get(key).add(puke);
+			}
+		}
+		
+	}
+	//5、计算玩家的分数
+	private void getSorce(){
+		String winner = null;
+		double winnerSorce = 0;
+		for(String key : map.keySet()){
+			TreeSet<String> set = map.get(key);
+			String[] pukes = set.toArray(new String[set.size()]);
+			double sorce = this.sorce(set);
+			this.sorceMap.put(key, sorce);
+			System.out.println("玩家"+key+"的牌为："+this.map.get(key)+"分值为："+sorce);
+			for(String key1:sorceMap.keySet()){
+				if(sorceMap.get(key1)>winnerSorce){
+					winnerSorce=sorceMap.get(key1);
+					winner=key1;
+				}
+			}
+		}
+		System.out.println("获胜者是： "+winner+"    分数是："+winnerSorce);
+	}
+	
+	private double sorce(TreeSet<String> set){
+		double sorce = 0;
+		boolean flag = true;
+		String[] pukes =  set.toArray(new String[set.size()]);
+		for(int i=0;i<pukes.length-1;i++){
+			int point1 = this.getPoint(pukes[i].substring(2));
+			int point2 = this.getPoint(pukes[i+1].substring(2));
+			if(point1-point2!=-1){
+				flag = false;
+				break;
+			}
+		}
+		if(flag){
+			sorce = 5.0 + this.getPoint(pukes[4].substring(2)) * 0.01;
+			return sorce;
+		}
+		int point1 = this.getPoint(pukes[0].substring(2));
+		int point2 = this.getPoint(pukes[1].substring(2));
+		int point3 = this.getPoint(pukes[2].substring(2));
+		int point4 = this.getPoint(pukes[3].substring(2));
+		int point5 = this.getPoint(pukes[4].substring(2));
+		if (point1==point4||point2==point5) {
+			sorce=4.0+point4*0.01;
+			return sorce;
+		}
+		if (point1==point3||point2==point4||point3==point5) {
+			sorce=3.0+point3*0.01;
+			return sorce;
+		}
+		if (point1==point2&&point3==point4) {
+			sorce=2.0+point3*0.01+point1*0.0001+point5*0.000001;
+			return sorce;
+		}
+		if (point2==point3&&point4==point5) {
+			sorce=2.0+point5*0.01+point2*0.0001+point1*0.000001;
+			return sorce;
+		}
+		if (point1==point2&&point4==point5) {
+			sorce=2.0+point5*0.01+point1*0.0001+point3*0.000001;
+			return sorce;
+		}
+		if (point1==point2) {
+			sorce=1.0+point1*0.01+point5*0.0001+point4*0.000001+point3*0.00000001;
+			return sorce;
+		}
+		if (point2==point3) {
+			sorce=1.0+point2*0.01+point5*0.0001+point4*0.000001+point1*0.00000001;
+			return sorce;
+		}
+		if (point3==point4) {
+			sorce=1.0+point3*0.01+point5*0.0001+point2*0.000001+point1*0.00000001;
+			return sorce;
+		}
+		if (point4==point5) {
+			sorce=1.0+point4*0.01+point3*0.0001+point2*0.000001+point1*0.00000001;
+			return sorce;
+		}
+		return sorce=point5*0.01+point4*0.0001+point3*0.000001+point2*0.000001+point1*0.00000001;
+	}
+		
+	
+	public void init(){
+		this.createPuke();
+		this.sortedPuke();
+		this.createPlayer();
+		if(flag){
+			this.showPuke();
+			this.getSorce();
+		}
+	}
+	
+	public static void main(String[] args) {
+		new ShowHand().init();
+	}
+}
